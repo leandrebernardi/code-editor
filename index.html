@@ -2,80 +2,93 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Mon Labo JS Dynamique</title>
+    <title>Labo HTML | CSS | JS</title>
     <style>
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; height: 100vh; background: #1e1e1e; color: white; }
-        header { padding: 10px 20px; background: #252526; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; height: 100vh; background: #1a1a1a; color: #eee; overflow: hidden; }
+        header { padding: 12px 25px; background: #2d2d2d; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; }
         .main { display: flex; flex: 1; overflow: hidden; }
-        .editors { flex: 1; display: flex; flex-direction: column; border-right: 2px solid #333; }
-        .editor-box { flex: 1; display: flex; flex-direction: column; }
-        label { background: #333; padding: 5px 15px; font-size: 12px; text-transform: uppercase; color: #aaa; }
-        textarea { flex: 1; background: #1e1e1e; color: #d4d4d4; border: none; padding: 15px; font-family: 'Consolas', monospace; font-size: 14px; resize: none; outline: none; }
-        .preview { flex: 1; background: white; }
+        .editors { flex: 1; display: flex; flex-direction: column; border-right: 2px solid #444; }
+        .editor-box { flex: 1; display: flex; flex-direction: column; border-bottom: 1px solid #333; }
+        label { background: #333; padding: 4px 12px; font-size: 10px; text-transform: uppercase; color: #00ffcc; letter-spacing: 1px; }
+        textarea { flex: 1; background: #1e1e1e; color: #dcdccc; border: none; padding: 15px; font-family: 'Consolas', 'Monaco', monospace; font-size: 14px; resize: none; outline: none; line-height: 1.5; }
+        .right-panel { flex: 1; display: flex; flex-direction: column; background: #fff; }
+        .preview { flex: 2; position: relative; border-bottom: 5px solid #2d2d2d; }
         iframe { width: 100%; height: 100%; border: none; background: white; }
-        .btn-run { background: #007acc; color: white; border: none; padding: 8px 20px; cursor: pointer; border-radius: 3px; font-weight: bold; }
-        .btn-run:hover { background: #005a9e; }
+        .console { flex: 1; background: #000; color: #00ff00; font-family: 'Consolas', monospace; font-size: 12px; overflow-y: auto; }
+        .console-header { background: #222; padding: 5px 15px; color: #888; font-size: 10px; border-bottom: 1px solid #333; }
+        .log-entry { padding: 5px 15px; border-bottom: 1px solid #111; }
+        .log-error { color: #ff5555; background: rgba(255, 0, 0, 0.1); }
+        .btn-run { background: #00ffcc; color: #000; border: none; padding: 8px 25px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.3s; }
+        .btn-run:hover { background: #00ccaa; box-shadow: 0 0 10px rgba(0, 255, 204, 0.4); }
     </style>
 </head>
 <body>
 
 <header>
-    <span><strong>JS Intermediate</strong> - Dynamic Webpages Lab</span>
-    <button class="btn-run" onclick="updatePreview()">Exécuter (Ctrl+S)</button>
+    <span><strong>PROJET :</strong> <input type="text" value="Nouveau Projet" style="background:transparent; border:none; color:white; font-weight:bold; outline:none;"></span>
+    <button class="btn-run" onclick="run()">RUN (Ctrl + S)</button>
 </header>
 
 <div class="main">
     <div class="editors">
         <div class="editor-box">
             <label>HTML</label>
-            <textarea id="html-code" placeholder="Écris ton HTML ici..."><div id="box">Clique-moi !</div></textarea>
+            <textarea id="h" spellcheck="false" placeholder=""></textarea>
         </div>
         <div class="editor-box">
             <label>CSS</label>
-            <textarea id="css-code" placeholder="Écris ton CSS ici...">#box { 
-  width: 200px; padding: 20px; 
-  background: coral; color: white; 
-  text-align: center; cursor: pointer; 
-  transition: 0.3s; border-radius: 8px;
-}</textarea>
+            <textarea id="c" spellcheck="false" placeholder="/* Ton CSS ici */"></textarea>
         </div>
         <div class="editor-box">
             <label>JavaScript</label>
-            <textarea id="js-code" placeholder="Écris ton JS ici...">const el = document.getElementById('box');
-
-el.onclick = function() {
-  this.style.background = 'seagreen';
-  this.innerHTML = 'DOM Manipulé ! 🎉';
-};</textarea>
+            <textarea id="j" spellcheck="false" placeholder="// Ton JavaScript ici"></textarea>
         </div>
     </div>
 
-    <div class="preview">
-        <iframe id="output"></iframe>
+    <div class="right-panel">
+        <div class="preview">
+            <iframe id="out"></iframe>
+        </div>
+        <div class="console">
+            <div class="console-header">SORTIE CONSOLE</div>
+            <div id="logs"></div>
+        </div>
     </div>
 </div>
 
 <script>
-    function updatePreview() {
-        const html = document.getElementById("html-code").value;
-        const css = "<style>" + document.getElementById("css-code").value + "</style>";
-        const js = "<script>" + document.getElementById("js-code").value + "<\/script>";
+    const logBox = document.getElementById('logs');
+    
+    function run() {
+        logBox.innerHTML = '';
+        const html = document.getElementById("h").value;
+        const css = `<style>${document.getElementById("c").value}</style>`;
+        const capture = `<script>
+            const log = console.log;
+            console.log = (...a) => {
+                window.parent.postMessage({t:'l', c: a.map(x => typeof x === 'object' ? JSON.stringify(x) : x).join(' ')}, '*');
+                log.apply(console, a);
+            };
+            window.onerror = (m) => window.parent.postMessage({t:'e', c: m}, '*');
+        <\/script>`;
+        const js = `<script>${document.getElementById("j").value}<\/script>`;
         
-        const output = document.getElementById("output").contentWindow.document;
-        output.open();
-        output.write(html + css + js);
-        output.close();
+        const doc = document.getElementById("out").contentWindow.document;
+        doc.open();
+        doc.write(capture + html + css + js);
+        doc.close();
     }
 
-    // Exécuter au chargement
-    window.onload = updatePreview;
+    window.addEventListener('message', e => {
+        const d = document.createElement('div');
+        d.className = 'log-entry' + (e.data.t === 'e' ? ' log-error' : '');
+        d.textContent = `> ${e.data.c}`;
+        logBox.appendChild(d);
+        logBox.scrollTop = logBox.scrollHeight;
+    });
 
-    // Raccourci clavier Ctrl+S ou Cmd+S
-    document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-            e.preventDefault();
-            updatePreview();
-        }
+    document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); run(); }
     });
 </script>
 
